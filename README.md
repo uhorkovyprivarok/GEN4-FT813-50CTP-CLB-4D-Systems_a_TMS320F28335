@@ -3,6 +3,7 @@
 Working on my school project.
 
 Microcontroller: TMS320F28335
+
 Display: GEN4-FT813-50CTP-CLB 4D Systems
 
 Programming studio: Code Composer
