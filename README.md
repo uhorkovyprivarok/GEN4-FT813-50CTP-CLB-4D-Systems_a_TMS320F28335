@@ -12,11 +12,11 @@ Status: Not working yet xD
 
 Connection between microcontroller and display is only 6 pins, wiew datasheet - https://4dsystems.com.au/mwdownloads/download/link/id/762/
 
-power: 27 = 5v+
-30 = GND
+power: 27 = 5v+;
+30 = GND;
 
 and for SPI 4 pins:
-4 = SPI_CS
-6 = SPI_MOSI
-7 = SPI_MISO
-8 = SPI_SCK
+4 = SPI_CS;
+6 = SPI_MOSI;
+7 = SPI_MISO;
+8 = SPI_SCK;
