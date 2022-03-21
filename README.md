@@ -11,6 +11,7 @@ Programming studio: Code Composer v11
 Status: Not working yet xD
 
 Connection between microcontroller and display is only 6 pins, wiew datasheet - https://4dsystems.com.au/mwdownloads/download/link/id/762/
+
 power: 27 = 5v+
 30 = GND
 
