@@ -4,7 +4,6 @@
 @version 5.0
 @date    2021-12-27
 @author  Rudolph Riedel
-@edit    Sakal-Sega David
 
 @section LICENSE
 
@@ -120,83 +119,8 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 */
 
 #pragma once
-#include <DSP2833x_Device.h>
 
 #if !defined (ARDUINO)
-
-
-typedef unsigned uint8_t;
-typedef unsigned long uint32_t;
-
-#if !defined (EVE_CS)
-    //#define EVE_CS_PORT PORTB
-    //#define EVE_CS      (1<<5)
-    #define EVE_PDN_PORT            //PORTB
-    #define EVE_PDN     (1<<4)
-    #define PORTB
-    #endif
-
-    static inline void EVE_pdn_set(void)
-    {
-        //EVE_PDN_PORT &= ~EVE_PDN;   /* Power-Down low */
-        GpioDataRegs.GPACLEAR.bit.GPIO14 = 1;
-    }
-
-    static inline void EVE_pdn_clear(void)
-    {
-        //EVE_PDN_PORT |= EVE_PDN;    /* Power-Down high */
-        GpioDataRegs.GPASET.bit.GPIO14 = 1;
-    }
-
-    static inline void EVE_cs_set(void)
-    {
-        //EVE_CS_PORT &= ~EVE_CS; /* cs low */
-        GpioDataRegs.GPACLEAR.bit.GPIO19 = 1;
-    }
-
-    static inline void EVE_cs_clear(void)
-    {
-        //EVE_CS_PORT |= EVE_CS;  /* cs high */
-        GpioDataRegs.GPASET.bit.GPIO19 = 1;
-    }
-
-    static inline void spi_transmit(uint8_t data)
-    {
-        while(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 1);       // wait for ready state
-        if(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 0) SpiaRegs.SPITXBUF = (data & 0xFF) << 8;
-        while(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 1);       // wait for ready state
-        //DELAY_US(500); /* wait for transmission to complete - 1us @ 8MHz SPI-Clock */
-    }
-
-    static inline void spi_transmit_32(uint32_t data)
-    {
-        spi_transmit((uint8_t)(data & 0x000000ff));
-        spi_transmit((uint8_t)(data >> 8));
-        spi_transmit((uint8_t)(data >> 16));
-        spi_transmit((uint8_t)(data >> 24));
-    }
-
-    /* spi_transmit_burst() is only used for cmd-FIFO commands so it *always* has to transfer 4 bytes */
-    static inline void spi_transmit_burst(uint32_t data)
-    {
-        spi_transmit_32(data);
-    }
-
-    static inline uint8_t spi_receive(uint8_t data)
-    {
-        while(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 1);       // wait for ready state
-        if(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 0) SpiaRegs.SPITXBUF = (data & 0xFF) << 8;
-        while(SpiaRegs.SPISTS.bit.INT_FLAG == 0);       // wait for ready state
-        return (SpiaRegs.SPIRXBUF & 0x00FF); // doplnit podmienky (data uz prisli) a overit zarovnanie vysledku
-    }
-
-    static inline uint8_t fetch_flash_byte(const uint8_t *data)
-    {
-        return *data;
-    }
-
-
-/* ---------------------------------------------------------------------------------------------------------------------------------------------------------------- */
 
     #if defined (__IMAGECRAFT__)
         #if defined (_AVR)
@@ -1577,6 +1501,106 @@ typedef unsigned long uint32_t;
 
     #endif /* __TI_ARM */
 #endif
+
+/*----------------------------------------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------------------------------------------*/
+
+/* this is for TIs C2000 compiled with their ti-cgt-c2000 compiler which does not define this many symbols */
+#if defined (__TMS320C28XX__)
+
+    /* the designated target actually is a TMS320F28335 */
+    #include <stdint.h>
+    #include <DSP2833x_Device.h>
+
+    typedef uint_least8_t uint8_t;
+
+#if !defined (EVE_CS)
+    //#define EVE_CS_PORT PORTB
+    //#define EVE_CS      (1<<5)
+    #define EVE_PDN_PORT            //PORTB
+    #define EVE_PDN     (1<<4)
+    #define PORTB
+#endif
+
+    /* 150MHz -> 6.67ns per cycle, one loop should be around 6 cycles -> 25000 loops for 1ms */
+    #define EVE_DELAY_1MS 25000
+
+    static inline void DELAY_MS(uint16_t val)
+    {
+        uint16_t counter;
+
+        while(val > 0)
+        {
+            for(counter=0; counter < EVE_DELAY_1MS;counter++)
+            {
+                asm(" RPT #7 || NOP");
+            }
+            val--;
+        }
+    }
+
+    static inline void EVE_pdn_set(void)
+    {
+        //EVE_PDN_PORT &= ~EVE_PDN;   /* Power-Down low */
+        GpioDataRegs.GPACLEAR.bit.GPIO14 = 1;
+    }
+
+    static inline void EVE_pdn_clear(void)
+    {
+        //EVE_PDN_PORT |= EVE_PDN;    /* Power-Down high */
+        GpioDataRegs.GPASET.bit.GPIO14 = 1;
+    }
+
+    static inline void EVE_cs_set(void)
+    {
+        //EVE_CS_PORT &= ~EVE_CS; /* cs low */
+        GpioDataRegs.GPACLEAR.bit.GPIO19 = 1;
+    }
+
+    static inline void EVE_cs_clear(void)
+    {
+        //EVE_CS_PORT |= EVE_CS;  /* cs high */
+        GpioDataRegs.GPASET.bit.GPIO19 = 1;
+    }
+
+    static inline void spi_transmit(uint8_t data)
+    {
+        while(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 1);       // wait for ready state
+        if(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 0) SpiaRegs.SPITXBUF = (data & 0xFF) << 8;
+        while(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 1);       // wait for ready state
+        //DELAY_US(500); /* wait for transmission to complete - 1us @ 8MHz SPI-Clock */
+    }
+
+    static inline void spi_transmit_32(uint32_t data)
+    {
+        spi_transmit((uint8_t)(data & 0x000000ff));
+        spi_transmit((uint8_t)(data >> 8));
+        spi_transmit((uint8_t)(data >> 16));
+        spi_transmit((uint8_t)(data >> 24));
+    }
+
+    /* spi_transmit_burst() is only used for cmd-FIFO commands so it *always* has to transfer 4 bytes */
+    static inline void spi_transmit_burst(uint32_t data)
+    {
+        spi_transmit_32(data);
+    }
+
+    static inline uint8_t spi_receive(uint8_t data)
+    {
+        while(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 1);       // wait for ready state
+        if(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 0) SpiaRegs.SPITXBUF = (data & 0xFF) << 8;
+        while(SpiaRegs.SPISTS.bit.INT_FLAG == 0);       // wait for ready state
+        return (SpiaRegs.SPIRXBUF & 0x00FF); // doplnit podmienky (data uz prisli) a overit zarovnanie vysledku
+    }
+
+    static inline uint8_t fetch_flash_byte(const uint8_t *data)
+    {
+        return *data;
+    }
+
+#endif
+
+
 
 /*----------------------------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------------------------------------------*/

@@ -4,7 +4,6 @@
 @version 5.0
 @date    2021-12-27
 @author  Rudolph Riedel
-@edit    Sakal-Sega David
 
 @section info
 
@@ -70,7 +69,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 - rewrote EVE_cmd_getprops(), it returns a struct now with pointer, width and height
 - rewrote EVE_cmd_getmatrix(), it returns a struct now with matrix coefficent a...f
 - added EVE_cmd_text_var() after struggeling with varargs, this function adds a single paramter for string conversion if EVE_OPT_FORMAT is given
-- "optimized" EVE_init() to only read REG_ID in the loop and to use DELAY_US(1); before reading REG_ID
+- "optimized" EVE_init() to only read REG_ID in the loop and to use DELAY_MS(1); before reading REG_ID
 - added waiting for REG_CPURESET to be 0x00 to EVE_init() to follow the initialization sequence more strictly, turned out that the touch-controller needs 10+ms extra
 - added updating of REG_FREQUENCY to 72MHz for BT81x to EVE_init(), the programming guide states that it must be updated if the hosts selects an alternative frequency
 - rephrased the comment for the meta-commands into a warning and put it in front of each function, do not use these functions for several objects at once
@@ -164,11 +163,6 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 */
 
 #include "EVE.h"
-
-
-#include "spi_func.h"
-
-
 
 #if EVE_GEN > 2
 #include <stdarg.h>
@@ -346,7 +340,7 @@ uint8_t EVE_busy(void)
         #if EVE_GEN > 2
 
         EVE_memWrite16(REG_COPRO_PATCH_DTR, copro_patch_pointer);
-        DELAY_US(5); /* just to be safe */
+        DELAY_MS(5); /* just to be safe */
         ftAddress = REG_CMDB_WRITE;
 
         EVE_cs_set();
@@ -359,7 +353,7 @@ uint8_t EVE_busy(void)
         EVE_cs_clear();
 
         EVE_memWrite8(REG_PCLK, EVE_PCLK); /* restore REG_PCLK in case it was set to zero by an error */
-        DELAY_US(5); /* just to be safe */
+        DELAY_MS(5); /* just to be safe */
 
         #endif
     }
@@ -1097,7 +1091,7 @@ uint8_t EVE_init_flash(void)
     while(status == 0) /* FLASH_STATUS_INIT - we are somehow still in init, give it a litte more time, this should never happen */
     {
         status = EVE_memRead8(REG_FLASH_STATUS);
-        DELAY_US(1);
+        DELAY_MS(1);
         timeout++;
         if(timeout > 100) /* 100ms and still in init, lets call quits now and exit with an error */
         {
@@ -1203,9 +1197,9 @@ uint8_t EVE_init(void)
     uint16_t timeout = 0;
 
     EVE_pdn_set();
-    DELAY_US(600); /* minimum time for power-down is 5ms */
+    DELAY_MS(6); /* minimum time for power-down is 5ms */
     EVE_pdn_clear();
-    DELAY_US(2100); /* minimum time to allow from rising PD_N to first access is 20ms */
+    DELAY_MS(21); /* minimum time to allow from rising PD_N to first access is 20ms */
 
 /*  EVE_cmdWrite(EVE_RST_PULSE,0); */ /* reset, only required for warm-start if PowerDown line is not used */
 
@@ -1230,11 +1224,11 @@ uint8_t EVE_init(void)
     So I added a fixed delay of 40ms as a compromise, this provides a moment of silence on the SPI
     without actually delaying the startup.
     */
-    DELAY_US(4000);
+    DELAY_MS(40);
 
     while(chipid != 0x7C) /* if chipid is not 0x7c, continue to read it until it is, EVE needs a moment for its power on self-test and configuration */
     {
-        DELAY_US(100);
+        DELAY_MS(1);
         chipid = EVE_memRead8(REG_ID);
         timeout++;
         if(timeout > 400)
@@ -1246,7 +1240,7 @@ uint8_t EVE_init(void)
     timeout = 0;
     while (0x00 != (EVE_memRead8(REG_CPURESET) & 0x07)) /* check if EVE is in working status */
     {
-        DELAY_US(100);
+        DELAY_MS(1);
         timeout++;
         if(timeout > 50) /* experimental, 10 was the lowest value to get the BT815 started with, the touch-controller was the last to get out of reset */
         {
@@ -1282,9 +1276,9 @@ uint8_t EVE_init(void)
 
         /* specific to the EVE2 modules from Matrix-Orbital we have to use GPIO3 to reset GT911 */
         EVE_memWrite16(REG_GPIOX_DIR,0x8008); /* Reset-Value is 0x8000, adding 0x08 sets GPIO3 to output, default-value for REG_GPIOX is 0x8000 -> Low output on GPIO3 */
-        DELAY_US(1); /* wait more than 100�s */
+        DELAY_MS(1); /* wait more than 100�s */
         EVE_memWrite8(REG_CPURESET, 0x00); /* clear all resets */
-        DELAY_US(110); /* wait more than 55ms - does not work with multitouch, for some reason a minimum delay of 108ms is required */
+        DELAY_MS(110); /* wait more than 55ms - does not work with multitouch, for some reason a minimum delay of 108ms is required */
         EVE_memWrite16(REG_GPIOX_DIR,0x8000); /* setting GPIO3 back to input */
     #endif
     #endif
@@ -1358,7 +1352,7 @@ uint8_t EVE_init(void)
     timeout = 0;
     while(EVE_busy() == 1) /* just to be safe, should not even enter the loop */
     {
-        DELAY_US(100);
+        DELAY_MS(1);
         timeout++;
         if(timeout > 4)
         {

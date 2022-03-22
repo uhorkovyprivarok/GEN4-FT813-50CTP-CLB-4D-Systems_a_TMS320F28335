@@ -4,7 +4,6 @@
 @version 5.0
 @date    2021-12-04
 @author  Rudolph Riedel
-@edit    Sakal-Sega David
 
 @section LICENSE
 

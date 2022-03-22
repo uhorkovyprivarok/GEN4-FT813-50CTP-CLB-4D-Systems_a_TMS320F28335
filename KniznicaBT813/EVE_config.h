@@ -2,15 +2,14 @@
 @file    EVE_config.h
 @brief   configuration information for some TFTs
 @version 5.0
-@date    2021-12-27
+@date    2022-03-19
 @author  Rudolph Riedel
-@edit    Sakal-Sega David
 
 @section LICENSE
 
 MIT License
 
-Copyright (c) 2016-2021 Rudolph Riedel
+Copyright (c) 2016-2022 Rudolph Riedel
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
 to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute,
@@ -74,6 +73,9 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 - converted all TABs to SPACEs
 - removed EVE_TOUCH_RZTHRESH as it only applies to resistive touch screens and as EVE_init() still writes it if the define exists in can be configured thru project options
 - added EVE_Display_Parameters_t to be used with an additional init function, still not sure how to procede exactly
+- split the settings for EVE_RiTFT70 and EVE_RiTFT50 after a report for the EVE_RiTFT70 not working properly and confirmation
+ that the provided alternative parameters do work, the EVE_RiTFT50 however are confirmed to be working with the IOT5
+- commented out EVE_Display_Parameters_t for now
 
 */
 
@@ -157,28 +159,29 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 #endif
 
 
+#if 0
 typedef struct
 {
-    unsigned hsize; /* valid range: 12 bits / 0-4095, Thd, length of the visible part of a line (in PCLKs) - active display width */
-    unsigned vsize; /* valid range: 12 bits / 0-4095, Tvd, number of visible lines (in lines) - active display height */
-    unsigned hsync0; /* valid range: 12 bits / 0-4095, Thf, Horizontal Front Porch */
-    unsigned hsync1;  /* valid range: 12 bits / 0-4095, Tvf + Tvp, Vertical Front Porch plus Vsync Pulse width */
-    unsigned hoffset; /* valid range: 12 bits / 0-4095, Thf + Thp + Thb, length of non-visible part of line (in PCLK cycles) */
-    unsigned hcycle; /* valid range: 12 bits / 0-4095, Th, total length of line (visible and non-visible) (in PCLKs) */
-    unsigned vsync0; /* valid range: 12 bits / 0-4095, Tvf, Vertical Front Porch */
-    unsigned vsync1; /* valid range: 12 bits / 0-4095, Tvf + Tvp, Vertical Front Porch plus Vsync Pulse width */
-    unsigned voffset;  /* valid range: 12 bits / 0-4095, Tvf + Tvp + Tvb Number of non-visible lines (in lines) */
-    unsigned vcycle; /* valid range: 12 bits / 0-4095, Tv, total number of lines (visible and non-visible) (in lines) */
-    unsigned swizzle; /* 4 bits, controls the arrangement of the output colour pins */
-    unsigned pclkpol; /* 1 bit, 0 = rising edge, 1 = falling edge */
-    unsigned cspread; /* helps with noise, when set to 1 fewer signals are changed simultaneously, reset-default: 1 */
-    unsigned pclk; /* pixel-clock divider, 0 = no PCLK output, 1 = use second PLL for pixel-clock in BT817 / BT818 */
-    unsigned long pclk_freq; /* frequency in Hz for BT817 / BT818 to be used with EVE_cmd_pclkfreq() in order to write REG_PCLK_FREQ */
-    unsigned pwm_duty; /* valid range: 0-128, backlight PWM level, 0 = off, 128 = max */
-    unsigned has_crystal;
-    unsigned has_gt911;
+    uint16_t hsize; /* valid range: 12 bits / 0-4095, Thd, length of the visible part of a line (in PCLKs) - active display width */
+    uint16_t vsize; /* valid range: 12 bits / 0-4095, Tvd, number of visible lines (in lines) - active display height */
+    uint16_t hsync0; /* valid range: 12 bits / 0-4095, Thf, Horizontal Front Porch */
+    uint16_t hsync1;  /* valid range: 12 bits / 0-4095, Tvf + Tvp, Vertical Front Porch plus Vsync Pulse width */
+    uint16_t hoffset; /* valid range: 12 bits / 0-4095, Thf + Thp + Thb, length of non-visible part of line (in PCLK cycles) */
+    uint16_t hcycle; /* valid range: 12 bits / 0-4095, Th, total length of line (visible and non-visible) (in PCLKs) */
+    uint16_t vsync0; /* valid range: 12 bits / 0-4095, Tvf, Vertical Front Porch */
+    uint16_t vsync1; /* valid range: 12 bits / 0-4095, Tvf + Tvp, Vertical Front Porch plus Vsync Pulse width */
+    uint16_t voffset;  /* valid range: 12 bits / 0-4095, Tvf + Tvp + Tvb Number of non-visible lines (in lines) */
+    uint16_t vcycle; /* valid range: 12 bits / 0-4095, Tv, total number of lines (visible and non-visible) (in lines) */
+    uint8_t swizzle; /* 4 bits, controls the arrangement of the output colour pins */
+    uint8_t pclkpol; /* 1 bit, 0 = rising edge, 1 = falling edge */
+    uint8_t cspread; /* helps with noise, when set to 1 fewer signals are changed simultaneously, reset-default: 1 */
+    uint8_t pclk; /* pixel-clock divider, 0 = no PCLK output, 1 = use second PLL for pixel-clock in BT817 / BT818 */
+    uint32_t pclk_freq; /* frequency in Hz for BT817 / BT818 to be used with EVE_cmd_pclkfreq() in order to write REG_PCLK_FREQ */
+    uint8_t pwm_duty; /* valid range: 0-128, backlight PWM level, 0 = off, 128 = max */
+    bool has_crystal;
+    bool has_gt911;
 } EVE_Display_Parameters_t;
-
+#endif
 
 
 /* display timing parameters below */
@@ -618,28 +621,44 @@ typedef struct
 #endif
 
 
-/* untested */
+/* untested but confirmed to be working */
 /* RVT50xQBxxxxx 800x480 5.0" Riverdi, various options, BT815/BT816 */
-/* RVT70xQBxxxxx 800x480 7.0" Riverdi, various options, BT815/BT816 */
-#if defined (EVE_RiTFT70) || defined (EVE_RiTFT50)
-#define EVE_HSIZE   (800L)  /* Thd Length of visible part of line (in PCLKs) - display width */
-#define EVE_VSIZE   (480L)  /* Tvd Number of visible lines (in lines) - display height */
+/* not working properly? try the EVE_RiTFT70 profile */
+#if defined (EVE_RiTFT50)
+#define EVE_HSIZE   (800L)
+#define EVE_VSIZE   (480L)
 
-#define EVE_VSYNC0  (0L)    /* Tvf Vertical Front Porch */
-#define EVE_VSYNC1  (10L)   /* Tvf + Tvp Vertical Front Porch plus Vsync Pulse width */
-#define EVE_VOFFSET (23L)   /* Tvf + Tvp + Tvb Number of non-visible lines (in lines) */
-#define EVE_VCYCLE  (525L)  /* Tv Total number of lines (visible and non-visible) (in lines) */
-#define EVE_HSYNC0  (0L)    /* Thf Horizontal Front Porch */
-#define EVE_HSYNC1  (10L)   /* Thf + Thp Horizontal Front Porch plus Hsync Pulse width */
-#define EVE_HOFFSET (46L)   /* Thf + Thp + Thb Length of non-visible part of line (in PCLK cycles) */
-#define EVE_HCYCLE  (1056L) /* Th Total length of line (visible and non-visible) (in PCLKs) */
-#define EVE_PCLK    (2L)    /* 72MHz / REG_PCLK = PCLK frequency 30 MHz */
-#define EVE_PCLKPOL (1L)    /* PCLK polarity (0 = rising edge, 1 = falling edge) */
-#define EVE_SWIZZLE (0L)    /* Defines the arrangement of the RGB pins of the FT800 */
+#define EVE_VSYNC0  (0L)
+#define EVE_VSYNC1  (10L)
+#define EVE_VOFFSET (23L)
+#define EVE_VCYCLE  (525L)
+#define EVE_HSYNC0  (0L)
+#define EVE_HSYNC1  (10L)
+#define EVE_HOFFSET (46L)
+#define EVE_HCYCLE  (1056L)
+#define EVE_PCLK    (2L)
+#define EVE_PCLKPOL (1L)
+#define EVE_SWIZZLE (0L)
 #define EVE_CSPREAD (1L)
 #define EVE_HAS_CRYSTAL
 #define EVE_GEN 3
 #endif
+
+
+/* untested but confirmed to be working */
+/* RVT70xQBxxxxx 800x480 7.0" Riverdi, various options, BT815/BT816 */
+/* not working properly? try the EVE_RiTFT50 profile */
+#if defined (EVE_RiTFT70)
+#define Resolution_800x480
+
+#define EVE_PCLK    (2L)
+#define EVE_PCLKPOL (1L)
+#define EVE_SWIZZLE (0L)
+#define EVE_CSPREAD (1L)
+#define EVE_HAS_CRYSTAL
+#define EVE_GEN 3
+#endif
+
 
 /* untested */
 /* RVT50HQBxxxxx 800x480 5.0" Riverdi, various options, BT817 */

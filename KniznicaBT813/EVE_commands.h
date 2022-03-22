@@ -4,7 +4,6 @@
 @version 5.0
 @date    2021-12-27
 @author  Rudolph Riedel
-@edit    Sakal-Sega David
 
 @section LICENSE
 
@@ -91,19 +90,6 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 #pragma once
 
 #include "EVE.h"
-#include "F28335_DeviceBasic.h"
-
-
-typedef int int16_t;
-typedef long int32_t;
-
-typedef unsigned uint8_t;
-typedef unsigned uint16_t;
-typedef unsigned long uint32_t;
-typedef long long int64_t;
-
-typedef unsigned long uint32;
-
 
 
 enum

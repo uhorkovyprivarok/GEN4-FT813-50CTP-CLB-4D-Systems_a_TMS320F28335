@@ -54,7 +54,9 @@ int main(void)
     //CLK_PHASE = 1;
     //CLKPOLARITY = 0;
 
+    EVE_init();
 
+/*
     EVE_cmd_dl(CMD_DLSTART); // tells EVE to start a new display-list
     EVE_cmd_dl(DL_CLEAR_RGB | 0xFFFFFF); // sets the background color
     EVE_cmd_dl(DL_CLEAR | CLR_COL | CLR_STN | CLR_TAG);
@@ -63,6 +65,7 @@ int main(void)
     EVE_cmd_dl(DL_DISPLAY); // put in the display list to mark its end
     EVE_cmd_dl(CMD_SWAP); // tell EVE to use the new display list
     while (EVE_busy());
+*/
 
 
 /*    int y = 0;
