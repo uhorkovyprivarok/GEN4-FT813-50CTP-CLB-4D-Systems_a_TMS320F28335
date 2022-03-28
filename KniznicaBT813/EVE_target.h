@@ -1542,33 +1542,38 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
     static inline void EVE_pdn_set(void)
     {
         //EVE_PDN_PORT &= ~EVE_PDN;   /* Power-Down low */
-        GpioDataRegs.GPACLEAR.bit.GPIO14 = 1;
+        GpioDataRegs.GPACLEAR.bit.GPIO14 = 1; // clear SPI_PD to log. 0
     }
 
     static inline void EVE_pdn_clear(void)
     {
         //EVE_PDN_PORT |= EVE_PDN;    /* Power-Down high */
-        GpioDataRegs.GPASET.bit.GPIO14 = 1;
+        GpioDataRegs.GPASET.bit.GPIO14 = 1; // set SPI_PD to log. 1
     }
 
     static inline void EVE_cs_set(void)
     {
         //EVE_CS_PORT &= ~EVE_CS; /* cs low */
-        GpioDataRegs.GPACLEAR.bit.GPIO19 = 1;
+        GpioDataRegs.GPACLEAR.bit.GPIO19 = 1; // clear SPI_CS to log. 0
     }
 
     static inline void EVE_cs_clear(void)
     {
         //EVE_CS_PORT |= EVE_CS;  /* cs high */
-        GpioDataRegs.GPASET.bit.GPIO19 = 1;
+        GpioDataRegs.GPASET.bit.GPIO19 = 1; // set SPI_CS to log. 1
     }
 
-    static inline void spi_transmit(uint8_t data)
+    static inline uint8_t spi_transmit(uint8_t data)
     {
         while(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 1);       // wait for ready state
         if(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 0) SpiaRegs.SPITXBUF = (data & 0xFF) << 8;
-        while(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 1);       // wait for ready state
-        //DELAY_US(500); /* wait for transmission to complete - 1us @ 8MHz SPI-Clock */
+        while(SpiaRegs.SPISTS.bit.INT_FLAG == 0);       // wait for transmission to complete
+        return (SpiaRegs.SPIRXBUF & 0x00FF); // data are right justified in SPIRXBUF
+
+        // Interrupt bit is the flag signaling the end of transmission,
+        // but the only way to clear this bit is to read the receive buffer.
+        // So, it is the same function as spi_receive. It is possible to
+        // make an "alias" to avoid using same code twice - library author will decide :-)
     }
 
     static inline void spi_transmit_32(uint32_t data)
@@ -1589,8 +1594,8 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
     {
         while(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 1);       // wait for ready state
         if(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 0) SpiaRegs.SPITXBUF = (data & 0xFF) << 8;
-        while(SpiaRegs.SPISTS.bit.INT_FLAG == 0);       // wait for ready state
-        return (SpiaRegs.SPIRXBUF & 0x00FF); // doplnit podmienky (data uz prisli) a overit zarovnanie vysledku
+        while(SpiaRegs.SPISTS.bit.INT_FLAG == 0);       // wait for transmission to complete
+        return (SpiaRegs.SPIRXBUF & 0x00FF); // data are right justified in SPIRXBUF
     }
 
     static inline uint8_t fetch_flash_byte(const uint8_t *data)
