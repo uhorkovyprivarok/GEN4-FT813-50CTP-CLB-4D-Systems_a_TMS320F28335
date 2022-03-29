@@ -1563,6 +1563,14 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
         GpioDataRegs.GPASET.bit.GPIO19 = 1; // set SPI_CS to log. 1
     }
 
+    static inline void spi_transmit(uint8_t data)
+    {
+        SpiaRegs.SPITXBUF = (data & 0xFF) << 8; /* looks odd with data = uint8_t but uint8_t actually is 16 bits wide on this controller */
+        while(SpiaRegs.SPISTS.bit.INT_FLAG == 0); // wait for transmission to complete
+        (void) SpiaRegs.SPIRXBUF; /* dummy read to clear the flags */
+    }
+
+/* 
     static inline uint8_t spi_transmit(uint8_t data)
     {
         while(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 1);       // wait for ready state
@@ -1575,6 +1583,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
         // So, it is the same function as spi_receive. It is possible to
         // make an "alias" to avoid using same code twice - library author will decide :-)
     }
+*/
 
     static inline void spi_transmit_32(uint32_t data)
     {
