@@ -42,7 +42,8 @@ int main(void)
     // init gpio
     gpio_init();
 
-    mcu_initSpia(500000); // set to 500 kHz
+    //mcu_initSpia(500000); // set to 500 kHz
+    mcu_initSpia(10000000); // set to 1000 kHz
 
     //intr_initInterrupts();
 

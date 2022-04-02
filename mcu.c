@@ -22,7 +22,10 @@ void mcu_initSpia(unsigned long Baudrate){
     GpioCtrlRegs.GPAMUX2.bit.GPIO18 = 1; // GPIO18 -> SPICLKA a.k.a. SPI A CLK - Clock out
     //GpioCtrlRegs.GPAMUX2.bit.GPIO19 = 1; // GPIO19 -> !SPISTEA a.k.a. SPI A CS - Chip select
     GpioCtrlRegs.GPADIR.bit.GPIO19 = 1; // set as general output pin as CS is controlled by display library
-    GpioCtrlRegs.GPADIR.bit.GPIO14 = 1; // SPI-PD - power down pin for display
+    GpioCtrlRegs.GPADIR.bit.GPIO14 = 1; // SPI_PD - power down pin for display
+
+    GpioDataRegs.GPASET.bit.GPIO19 = 1; // set CS high on init
+    GpioDataRegs.GPASET.bit.GPIO14 = 1; // set SPI_PD high on init
 
     // enable clocks for SPI module
     SysCtrlRegs.PCLKCR0.bit.SPIAENCLK = 1;
@@ -36,7 +39,8 @@ void mcu_initSpia(unsigned long Baudrate){
 
     // clocking
     SpiaRegs.SPICTL.bit.CLK_PHASE = 0; // clock phase
-    SpiaRegs.SPICCR.bit.CLKPOLARITY = 1; // clock polarity
+    SpiaRegs.SPICCR.bit.CLKPOLARITY = 0; // clock polarity
+    //SpiaRegs.SPICCR.bit.CLKPOLARITY = 1; // clock polarity
 
     if ((BRR=MCU_LSPCLK/Baudrate - 1) > 0x7F){  // BRR is only 7 bit wide
         SpiaRegs.SPIBRR = MCU_LSPCLK/Baudrate - 1;
