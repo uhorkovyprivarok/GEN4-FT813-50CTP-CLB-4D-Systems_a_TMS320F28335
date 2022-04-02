@@ -184,6 +184,7 @@ void EVE_cmdWrite(uint8_t command, uint8_t parameter)
     spi_transmit(command);
     spi_transmit(parameter);
     spi_transmit(0x00);
+    //for( int i = 0; i < 1000 ; i++ );
     EVE_cs_clear();
 }
 
@@ -193,6 +194,9 @@ uint8_t EVE_memRead8(uint32_t ftAddress)
     uint8_t ftData8;
     EVE_cs_set();
     spi_transmit_32(0x00000000 + ((uint8_t)(ftAddress >> 16) | MEM_READ) + (ftAddress & 0x0000ff00) + ( (ftAddress & 0x000000ff) << 16) );
+
+    //spi_transmit_32( (ftAddress & 0XFF) << 24 | (ftAddress & 0XFF00) << 8 | (ftAddress & 0XFF0000) >> 8 | (ftAddress & 0XFF000000) >> 24 );
+
     ftData8 = spi_receive(0x00); /* read data byte by sending another dummy byte */
     EVE_cs_clear();
     return ftData8; /* return byte read */

@@ -1523,7 +1523,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 #endif
 
     /* 150MHz -> 6.67ns per cycle, one loop should be around 6 cycles -> 25000 loops for 1ms */
-    #define EVE_DELAY_1MS 25000
+    #define EVE_DELAY_1MS 12000
 
     static inline void DELAY_MS(uint16_t val)
     {
@@ -1543,12 +1543,14 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
     {
         //EVE_PDN_PORT &= ~EVE_PDN;   /* Power-Down low */
         GpioDataRegs.GPACLEAR.bit.GPIO14 = 1; // clear SPI_PD to log. 0
+        //GpioDataRegs.GPASET.bit.GPIO14 = 1;
     }
 
     static inline void EVE_pdn_clear(void)
     {
         //EVE_PDN_PORT |= EVE_PDN;    /* Power-Down high */
         GpioDataRegs.GPASET.bit.GPIO14 = 1; // set SPI_PD to log. 1
+        //GpioDataRegs.GPACLEAR.bit.GPIO14 = 1;
     }
 
     static inline void EVE_cs_set(void)
@@ -1560,17 +1562,19 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
     static inline void EVE_cs_clear(void)
     {
         //EVE_CS_PORT |= EVE_CS;  /* cs high */
+        //for( int i = 0; i < 10000 ; i++ );
         GpioDataRegs.GPASET.bit.GPIO19 = 1; // set SPI_CS to log. 1
     }
 
     static inline void spi_transmit(uint8_t data)
     {
-        SpiaRegs.SPITXBUF = (data & 0xFF) << 8; /* looks odd with data = uint8_t but uint8_t actually is 16 bits wide on this controller */
+        SpiaRegs.SPITXBUF = (data & 0xFF) << 8; // looks odd with data = uint8_t but uint8_t actually is 16 bits wide on this controller
         while(SpiaRegs.SPISTS.bit.INT_FLAG == 0); // wait for transmission to complete
-        (void) SpiaRegs.SPIRXBUF; /* dummy read to clear the flags */
+        (void) SpiaRegs.SPIRXBUF; // dummy read to clear the flags
+        asm(" RPT #100 || NOP");
     }
 
-/* 
+/*
     static inline uint8_t spi_transmit(uint8_t data)
     {
         while(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 1);       // wait for ready state
@@ -1601,11 +1605,23 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
     static inline uint8_t spi_receive(uint8_t data)
     {
+        SpiaRegs.SPITXBUF = (data & 0xFF) << 8;
+        while(SpiaRegs.SPISTS.bit.INT_FLAG == 0); // wait for transmission to complete
+        asm(" RPT #7 || NOP");
+        return (SpiaRegs.SPIRXBUF & 0x00FF); // data are right justified in SPIRXBUF
+    }
+
+    /*
+
+    static inline uint8_t spi_receive(uint8_t data)
+    {
         while(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 1);       // wait for ready state
         if(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 0) SpiaRegs.SPITXBUF = (data & 0xFF) << 8;
         while(SpiaRegs.SPISTS.bit.INT_FLAG == 0);       // wait for transmission to complete
         return (SpiaRegs.SPIRXBUF & 0x00FF); // data are right justified in SPIRXBUF
     }
+
+    */
 
     static inline uint8_t fetch_flash_byte(const uint8_t *data)
     {
