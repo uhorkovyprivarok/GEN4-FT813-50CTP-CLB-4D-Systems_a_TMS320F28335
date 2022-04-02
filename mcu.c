@@ -25,7 +25,8 @@ void mcu_initSpia(unsigned long Baudrate){
     GpioCtrlRegs.GPADIR.bit.GPIO14 = 1; // SPI_PD - power down pin for display
 
     GpioDataRegs.GPASET.bit.GPIO19 = 1; // set CS high on init
-    GpioDataRegs.GPASET.bit.GPIO14 = 1; // set SPI_PD high on init
+    GpioDataRegs.GPACLEAR.bit.GPIO14 = 1; // set SPI_PD low on init
+    //GpioDataRegs.GPASET.bit.GPIO14 = 1; // set SPI_PD high on init
 
     // enable clocks for SPI module
     SysCtrlRegs.PCLKCR0.bit.SPIAENCLK = 1;
@@ -38,11 +39,10 @@ void mcu_initSpia(unsigned long Baudrate){
     SpiaRegs.SPIPRI.bit.FREE = 1; // free run during emulation suspend
 
     // clocking
-    SpiaRegs.SPICTL.bit.CLK_PHASE = 0; // clock phase
+    SpiaRegs.SPICTL.bit.CLK_PHASE = 1; // clock phase
     SpiaRegs.SPICCR.bit.CLKPOLARITY = 0; // clock polarity
-    //SpiaRegs.SPICCR.bit.CLKPOLARITY = 1; // clock polarity
 
-    if ((BRR=MCU_LSPCLK/Baudrate - 1) > 0x7F){  // BRR is only 7 bit wide
+    if ((BRR=MCU_LSPCLK/Baudrate - 1) < 0x7F){  // BRR is only 7 bit wide
         SpiaRegs.SPIBRR = MCU_LSPCLK/Baudrate - 1;
     }
     else{
