@@ -48,7 +48,15 @@ int main(void)
     //intr_initInterrupts();
 
 
-   EVE_init();
+    EVE_init();
+
+    EVE_cmd_dl(CMD_DLSTART);
+    EVE_cmd_dl(DL_CLEAR_RGB | 0x000000UL);
+    EVE_cmd_dl(DL_CLEAR | CLR_COL | CLR_STN | CLR_TAG);
+    EVE_cmd_text((EVE_HSIZE/2), 50, 28, EVE_OPT_CENTER, "Hello there...");
+    EVE_cmd_dl(DL_DISPLAY);
+    EVE_cmd_dl(CMD_SWAP);
+    EVE_execute_cmd();
 
 
    while(1)
