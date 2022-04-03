@@ -2,14 +2,14 @@
 @file    EVE_target.h
 @brief   target specific includes, definitions and functions
 @version 5.0
-@date    2021-12-27
+@date    2022-04-03
 @author  Rudolph Riedel
 
 @section LICENSE
 
 MIT License
 
-Copyright (c) 2016-2021 Rudolph Riedel
+Copyright (c) 2016-2022 Rudolph Riedel
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
 to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute,
@@ -85,6 +85,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 - made the pin defines for all targets that have one optional
 - split the ATSAMC21 and ATSAMx51 targets into separate sections
 - updated the explanation of how DMA works
+- added a TMS320F28335 target
 
 */
 
@@ -1512,17 +1513,9 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
     #include <stdint.h>
     #include <DSP2833x_Device.h>
 
-    typedef uint_least8_t uint8_t;
+    typedef uint_least8_t uint8_t;  /* this architecture does not actually know what a byte is, uint_least8_t is 16 bits wide */
 
-#if !defined (EVE_CS)
-    //#define EVE_CS_PORT PORTB
-    //#define EVE_CS      (1<<5)
-    #define EVE_PDN_PORT            //PORTB
-    #define EVE_PDN     (1<<4)
-    #define PORTB
-#endif
-
-    /* 150MHz -> 6.67ns per cycle, one loop should be around 6 cycles -> 25000 loops for 1ms */
+    /* 150MHz -> 6.67ns per cycle, 5 cycles for the loop itself and 8 NOPs -> 1ms / (6.67ns * 13) = 11532 */
     #define EVE_DELAY_1MS 12000
 
     static inline void DELAY_MS(uint16_t val)
@@ -1541,54 +1534,31 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
     static inline void EVE_pdn_set(void)
     {
-        //EVE_PDN_PORT &= ~EVE_PDN;   /* Power-Down low */
-        GpioDataRegs.GPACLEAR.bit.GPIO14 = 1; // clear SPI_PD to log. 0
-        //GpioDataRegs.GPASET.bit.GPIO14 = 1;
+        GpioDataRegs.GPACLEAR.bit.GPIO14 = 1; /* Power-Down low */
     }
 
     static inline void EVE_pdn_clear(void)
     {
-        //EVE_PDN_PORT |= EVE_PDN;    /* Power-Down high */
-        GpioDataRegs.GPASET.bit.GPIO14 = 1; // set SPI_PD to log. 1
-        //GpioDataRegs.GPACLEAR.bit.GPIO14 = 1;
+        GpioDataRegs.GPASET.bit.GPIO14 = 1; /* Power-Down high */
     }
 
     static inline void EVE_cs_set(void)
     {
-        //EVE_CS_PORT &= ~EVE_CS; /* cs low */
-        GpioDataRegs.GPACLEAR.bit.GPIO19 = 1; // clear SPI_CS to log. 0
+        GpioDataRegs.GPACLEAR.bit.GPIO19 = 1; /* CS low */
     }
 
     static inline void EVE_cs_clear(void)
     {
-        //EVE_CS_PORT |= EVE_CS;  /* cs high */
-        //for( int i = 0; i < 10000 ; i++ );
-        //asm(" RPT #60 || NOP");
-        GpioDataRegs.GPASET.bit.GPIO19 = 1; // set SPI_CS to log. 1
+        asm(" RPT #60 || NOP"); /* wait 60 cycles to make sure CS is not going high too early */ 
+        GpioDataRegs.GPASET.bit.GPIO19 = 1; /* CS high */
     }
 
     static inline void spi_transmit(uint8_t data)
     {
-        SpiaRegs.SPITXBUF = (data & 0xFF) << 8; // looks odd with data = uint8_t but uint8_t actually is 16 bits wide on this controller
-        while(SpiaRegs.SPISTS.bit.INT_FLAG == 0); // wait for transmission to complete
-        (void) SpiaRegs.SPIRXBUF; // dummy read to clear the flags
-        asm(" RPT #60 || NOP");
+        SpiaRegs.SPITXBUF = (data & 0xFF) << 8; /* start transfer, looks odd with data = uint8_t but uint8_t actually is 16 bits wide on this controller */
+        while(SpiaRegs.SPISTS.bit.INT_FLAG == 0); /* wait for transmission to complete */
+        (void) SpiaRegs.SPIRXBUF; /* dummy read to clear the flags */
     }
-
-/*
-    static inline uint8_t spi_transmit(uint8_t data)
-    {
-        while(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 1);       // wait for ready state
-        if(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 0) SpiaRegs.SPITXBUF = (data & 0xFF) << 8;
-        while(SpiaRegs.SPISTS.bit.INT_FLAG == 0);       // wait for transmission to complete
-        return (SpiaRegs.SPIRXBUF & 0x00FF); // data are right justified in SPIRXBUF
-
-        // Interrupt bit is the flag signaling the end of transmission,
-        // but the only way to clear this bit is to read the receive buffer.
-        // So, it is the same function as spi_receive. It is possible to
-        // make an "alias" to avoid using same code twice - library author will decide :-)
-    }
-*/
 
     static inline void spi_transmit_32(uint32_t data)
     {
@@ -1606,23 +1576,10 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
     static inline uint8_t spi_receive(uint8_t data)
     {
-        SpiaRegs.SPITXBUF = (data & 0xFF) << 8;
-        while(SpiaRegs.SPISTS.bit.INT_FLAG == 0); // wait for transmission to complete
-        asm(" RPT #60 || NOP");
-        return (SpiaRegs.SPIRXBUF & 0x00FF); // data are right justified in SPIRXBUF
+        SpiaRegs.SPITXBUF = (data & 0xFF) << 8; /* start transfer */
+        while(SpiaRegs.SPISTS.bit.INT_FLAG == 0); /* wait for transmission to complete */
+        return (SpiaRegs.SPIRXBUF & 0x00FF); /* data is right justified in SPIRXBUF */
     }
-
-    /*
-
-    static inline uint8_t spi_receive(uint8_t data)
-    {
-        while(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 1);       // wait for ready state
-        if(SpiaRegs.SPISTS.bit.BUFFULL_FLAG == 0) SpiaRegs.SPITXBUF = (data & 0xFF) << 8;
-        while(SpiaRegs.SPISTS.bit.INT_FLAG == 0);       // wait for transmission to complete
-        return (SpiaRegs.SPIRXBUF & 0x00FF); // data are right justified in SPIRXBUF
-    }
-
-    */
 
     static inline uint8_t fetch_flash_byte(const uint8_t *data)
     {
@@ -1630,7 +1587,6 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
     }
 
 #endif
-
 
 
 /*----------------------------------------------------------------------------------------------------------------*/
