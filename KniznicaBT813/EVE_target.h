@@ -1510,6 +1510,8 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 #if defined (__TMS320C28XX__)
 
     /* the designated target actually is a TMS320F28335 */
+    /* credit for this goes to David Sakal-Sega */
+
     #include <stdint.h>
     #include <DSP2833x_Device.h>
 
