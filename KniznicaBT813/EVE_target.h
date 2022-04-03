@@ -1563,6 +1563,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
     {
         //EVE_CS_PORT |= EVE_CS;  /* cs high */
         //for( int i = 0; i < 10000 ; i++ );
+        //asm(" RPT #60 || NOP");
         GpioDataRegs.GPASET.bit.GPIO19 = 1; // set SPI_CS to log. 1
     }
 
@@ -1571,7 +1572,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
         SpiaRegs.SPITXBUF = (data & 0xFF) << 8; // looks odd with data = uint8_t but uint8_t actually is 16 bits wide on this controller
         while(SpiaRegs.SPISTS.bit.INT_FLAG == 0); // wait for transmission to complete
         (void) SpiaRegs.SPIRXBUF; // dummy read to clear the flags
-        asm(" RPT #100 || NOP");
+        asm(" RPT #60 || NOP");
     }
 
 /*
@@ -1607,7 +1608,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
     {
         SpiaRegs.SPITXBUF = (data & 0xFF) << 8;
         while(SpiaRegs.SPISTS.bit.INT_FLAG == 0); // wait for transmission to complete
-        asm(" RPT #7 || NOP");
+        asm(" RPT #60 || NOP");
         return (SpiaRegs.SPIRXBUF & 0x00FF); // data are right justified in SPIRXBUF
     }
 
