@@ -12,11 +12,14 @@ Status: Fully working
 
 Connection between microcontroller and display is only 6 pins, wiew datasheet - https://4dsystems.com.au/mwdownloads/download/link/id/762/
 
-power: 27 = 5v+;
-30 = GND;
+power: pin 27 = 5v+;
+pin 30 = GND;
 
 and for SPI 4 pins:
-4 = SPI_CS;
-6 = SPI_MOSI;
-7 = SPI_MISO;
-8 = SPI_SCK;
+pin 4 = SPI_CS;
+pin 6 = SPI_MOSI;
+pin 7 = SPI_MISO;
+pin 8 = SPI_SCK;
+
+LEGEND:
+ 4GEN-BOB pin = TMS pin
