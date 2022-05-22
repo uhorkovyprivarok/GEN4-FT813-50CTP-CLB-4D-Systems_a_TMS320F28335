@@ -8,7 +8,7 @@ Display: GEN4-FT813-50CTP-CLB 4D Systems
 
 Programming studio: Code Composer v11
 
-Status: Fully working
+Status: Fully working, actually main.c shows on display "Hello world..." screen
 
 Connection between microcontroller and display is only 7 pins, wiew datasheet - https://4dsystems.com.au/mwdownloads/download/link/id/762/
 
